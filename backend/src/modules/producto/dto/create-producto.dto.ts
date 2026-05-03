@@ -5,34 +5,52 @@ export class CreateProductoDto {
   @ApiProperty({ description: 'Nombre del producto', example: 'Remera Algodón' })
   @IsString()
   @MaxLength(255)
-  nombre: string;
+  readonly nombre: string;
 
   @ApiPropertyOptional({ description: 'Descripción del producto', example: 'Remera de algodón 100%' })
   @IsOptional()
   @IsString()
-  descripcion?: string;
+  readonly descripcion?: string;
 
   @ApiProperty({ description: 'Talle del producto', example: 'M' })
   @IsString()
-  talle: string;
+  readonly talle: string;
 
   @ApiProperty({ description: 'Precio en centavos', example: 15000 })
   @IsNumber()
   @Min(0)
-  precioCentavos: number;
+  readonly precioCentavos: number;
 
   @ApiProperty({ description: 'Stock disponible', example: 100 })
   @IsNumber()
   @Min(0)
-  stock: number;
+  readonly stock: number;
 
   @ApiPropertyOptional({ description: 'URLs de imágenes', example: ['https://ej.com/img1.jpg'] })
   @IsOptional()
   @IsString({ each: true })
-  imagenes?: string[];
+  readonly imagenes?: string[];
 
   @ApiPropertyOptional({ description: 'Estado activo', example: true })
   @IsOptional()
   @IsBoolean()
-  activo?: boolean;
+  readonly activo?: boolean;
+
+  constructor(
+    nombre: string,
+    talle: string,
+    precioCentavos: number,
+    stock: number,
+    descripcion?: string,
+    imagenes?: string[],
+    activo?: boolean,
+  ) {
+    this.nombre = nombre;
+    this.talle = talle;
+    this.precioCentavos = precioCentavos;
+    this.stock = stock;
+    this.descripcion = descripcion;
+    this.imagenes = imagenes;
+    this.activo = activo;
+  }
 }
