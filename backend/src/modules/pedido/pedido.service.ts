@@ -9,20 +9,30 @@ export class PedidoService {
   async crear(data: CreatePedidoDto) {
     const { emailComprador, telefonoComprador, items } = data;
 
-    // Calcular total y verificar stock
-    let totalCentavos = 0;
+    const productosMap = new Map<string, bigint>();
+    let totalCentavos = BigInt(0);
+
     for (const item of items) {
-      const producto = await this.prisma.producto.findUnique({ where: { id: item.productoId } });
-      if (!producto) throw new NotFoundException(`Producto ${item.productoId} no encontrado`);
-      if (producto.stock < item.cantidad) throw new Error(`Stock insuficiente para ${producto.nombre}`);
-      totalCentavos += producto.precioCentavos * BigInt(item.cantidad);
+      const producto = await this.prisma.producto.findUnique({
+        where: { id: item.productoId },
+      });
+
+      if (!producto) {
+        throw new NotFoundException(`Producto ${item.productoId} no encontrado`);
+      }
+
+      if (producto.stock < item.cantidad) {
+        throw new Error(`Stock insuficiente para ${producto.nombre}`);
+      }
+
+      const precio = BigInt(producto.precioCentavos);
+      totalCentavos += precio * BigInt(item.cantidad);
+      productosMap.set(item.productoId, precio);
     }
 
-    // Crear el pedido con transacción
     const codigo = this.generarCodigoReferencia();
-    const vencimientoHoras = 48;
     const ahora = new Date();
-    const vencidoEn = new Date(ahora.getTime() + vencimientoHoras * 60 * 60 * 1000);
+    const vencidoEn = new Date(ahora.getTime() + 48 * 60 * 60 * 1000);
 
     const pedido = await this.prisma.pedido.create({
       data: {
@@ -36,18 +46,14 @@ export class PedidoService {
           create: items.map((item) => ({
             productoId: item.productoId,
             cantidad: item.cantidad,
-            precioUnitarioCentavos: BigInt(
-              items.find((i) => i.productoId === item.productoId)!.productoId
-                ? 0
-                : 0
-            ),
+            precioUnitarioCentavos: productosMap.get(item.productoId)!,
+            subtotalCentavos: productosMap.get(item.productoId)! * BigInt(item.cantidad),
           })),
         },
       },
       include: { items: true },
     });
 
-    // Notificar al administrador
     await this.prisma.notificacion.create({
       data: {
         canal: 'EMAIL',
@@ -64,7 +70,11 @@ export class PedidoService {
       where: { id },
       include: { items: { include: { producto: true } } },
     });
-    if (!pedido) throw new NotFoundException('Pedido no encontrado');
+
+    if (!pedido) {
+      throw new NotFoundException('Pedido no encontrado');
+    }
+
     return pedido;
   }
 
@@ -73,10 +83,15 @@ export class PedidoService {
       where: { id },
       include: { items: { include: { producto: true } } },
     });
-    if (!pedido) throw new NotFoundException('Pedido no encontrado');
-    if (pedido.estado === 'PAGO_CONFIRMADO') throw new Error('El pedido ya está confirmado');
 
-    // Descontar stock
+    if (!pedido) {
+      throw new NotFoundException('Pedido no encontrado');
+    }
+
+    if (pedido.estado === 'PAGO_CONFIRMADO') {
+      throw new Error('El pedido ya está confirmado');
+    }
+
     for (const item of pedido.items) {
       await this.prisma.producto.update({
         where: { id: item.productoId },
@@ -93,7 +108,6 @@ export class PedidoService {
       include: { items: { include: { producto: true } } },
     });
 
-    // Notificar confirmación
     await this.prisma.notificacion.create({
       data: {
         canal: 'EMAIL',
@@ -107,10 +121,12 @@ export class PedidoService {
 
   private generarCodigoReferencia(): string {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    let resultado = '';
+    const id = [];
+
     for (let i = 0; i < 8; i++) {
-      resultado += chars.charAt(Math.floor(Math.random() * chars.length));
+      id.push(chars.charAt(Math.floor(Math.random() * chars.length)));
     }
-    return `PED-${resultado}`;
+
+    return `PED-${id.join('')}`;
   }
 }
