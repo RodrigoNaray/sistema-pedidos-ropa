@@ -1,0 +1,121 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ----------------------------------------------------
+// Enumeraciones
+// ----------------------------------------------------
+
+enum EstadoPedido {
+  PENDIENTE_PAGO
+  PAGO_CONFIRMADO
+  CANCELADO
+}
+
+enum CanalNotificacion {
+  EMAIL
+  PANEL
+}
+
+// ----------------------------------------------------
+// Clases del Dominio (Entidades persistentes)
+// ----------------------------------------------------
+
+model Producto {
+  id               String    @id @default(uuid())
+  nombre           String
+  descripcion      String?
+  talle            String
+  precioCentavos   BigInt
+  stock            Int
+  imagenes         String[]
+  activo           Boolean   @default(true)
+  creadoEn         DateTime  @default(now())
+  actualizadoEn    DateTime  @updatedAt
+
+  items            PedidoItem[]
+
+  @@index([activo])
+  @@index([stock])
+  @@map("productos")
+}
+
+model Pedido {
+  id               String         @id @default(uuid())
+  emailComprador   String
+  telefonoComprador String
+  estado           EstadoPedido   @default(PENDIENTE_PAGO)
+  totalCentavos    BigInt
+  codigo           String         @unique
+  creadoEn         DateTime       @default(now())
+  confirmadoEn     DateTime?
+  vencidoEn        DateTime
+
+  items            PedidoItem[]
+  notificaciones   Notificacion[]
+
+  @@index([estado])
+  @@index([emailComprador])
+  @@map("pedidos")
+}
+
+model PedidoItem {
+  id                   String   @id @default(uuid())
+  pedidoId             String
+  productoId           String
+  cantidad             Int
+  precioUnitarioCentavos BigInt
+  subtotalCentavos     BigInt
+
+  pedido               Pedido   @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  producto             Producto @relation(fields: [productoId], references: [id], onDelete: Cascade)
+
+  @@unique([pedidoId, productoId])
+  @@map("pedido_items")
+}
+
+model Notificacion {
+  id          String           @id @default(uuid())
+  canal       CanalNotificacion
+  mensaje     String
+  leida       Boolean          @default(false)
+  creadoEn    DateTime         @default(now())
+  pedidoId    String?
+
+  pedido      Pedido?          @relation(fields: [pedidoId], references: [id], onDelete: SetNull)
+
+  @@index([canal])
+  @@index([leida])
+  @@map("notificaciones")
+}
+
+model Administrador {
+  id          String   @id @default(uuid())
+  nombre      String
+  email       String   @unique
+  claveHash   String
+  creadoEn    DateTime @default(now())
+
+  @@map("administradores")
+}
+
+model ConfiguracionTienda {
+  id                    String   @id @default("global")
+  nombreTienda          String
+  whatsappContacto      String
+  banco                 String
+  cbu                   String
+  alias                 String
+  titular               String
+  mensajeTransferencia  String
+  actualizadoEn         DateTime @updatedAt
+  pedidoVencimientoHoras Int     @default(48)
+  estadoProductoBorrador Boolean @default(true)
+
+  @@map("configuraciones")
+}
