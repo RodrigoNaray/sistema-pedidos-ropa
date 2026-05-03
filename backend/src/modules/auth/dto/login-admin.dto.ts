@@ -5,10 +5,15 @@ export class LoginAdminDto {
   @ApiProperty({ description: 'Email del administrador', example: 'admin@ejemplo.com' })
   @IsString()
   @IsNotEmpty()
-  email: string;
+  readonly email: string;
 
   @ApiProperty({ description: 'Contraseña', example: 'MiContraseña123!' })
   @IsString()
   @IsNotEmpty()
-  password: string;
+  readonly password: string;
+
+  constructor(email: string, password: string) {
+    this.email = email;
+    this.password = password;
+  }
 }

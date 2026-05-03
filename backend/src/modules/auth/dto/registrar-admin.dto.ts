@@ -5,16 +5,22 @@ export class RegistrarAdminDto {
   @ApiProperty({ description: 'Nombre del administrador', example: 'Carlos Admin' })
   @IsString()
   @IsNotEmpty()
-  nombre: string;
+  readonly nombre: string;
 
   @ApiProperty({ description: 'Email del administrador', example: 'admin@tienda.com' })
   @IsString()
   @IsNotEmpty()
-  email: string;
+  readonly email: string;
 
   @ApiProperty({ description: 'Contraseña (mínimo 8 caracteres)', example: 'MiPassword123!' })
   @IsString()
   @IsNotEmpty()
   @MinLength(8)
-  password: string;
+  readonly password: string;
+
+  constructor(nombre: string, email: string, password: string) {
+    this.nombre = nombre;
+    this.email = email;
+    this.password = password;
+  }
 }
