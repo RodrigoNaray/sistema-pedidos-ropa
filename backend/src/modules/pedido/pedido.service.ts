@@ -43,12 +43,18 @@ export class PedidoService {
         vencidoEn,
         estado: 'PENDIENTE_PAGO',
         items: {
-          create: items.map((item) => ({
-            productoId: item.productoId,
-            cantidad: item.cantidad,
-            precioUnitarioCentavos: productosMap.get(item.productoId)!,
-            subtotalCentavos: productosMap.get(item.productoId)! * BigInt(item.cantidad),
-          })),
+          create: items.map((item) => {
+            const precio = productosMap.get(item.productoId);
+            if (!precio) {
+              throw new NotFoundException(`Precio no encontrado para producto ${item.productoId}`);
+            }
+            return {
+              productoId: item.productoId,
+              cantidad: item.cantidad,
+              precioUnitarioCentavos: precio,
+              subtotalCentavos: precio * BigInt(item.cantidad),
+            };
+          }),
         },
       },
       include: { items: true },
@@ -121,12 +127,12 @@ export class PedidoService {
 
   private generarCodigoReferencia(): string {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    const id = [];
+    const codigo: string[] = [];
 
     for (let i = 0; i < 8; i++) {
-      id.push(chars.charAt(Math.floor(Math.random() * chars.length)));
+      codigo.push(chars.charAt(Math.floor(Math.random() * chars.length)));
     }
 
-    return `PED-${id.join('')}`;
+    return `PED-${codigo.join('')}`;
   }
 }
