@@ -1,7 +1,17 @@
-export default function Home() {
+export default function HomePage() {
   return (
     <main>
-      <h1>Bienvenido a la Tienda de Ropa</h1>
+      <header>
+        <h1>Bienvenido a nuestra tienda de ropa</h1>
+        <nav>
+          <a href="/productos">Ver catalogo</a>
+        </nav>
+      </header>
+
+      <section>
+        <h2>Nueva coleccion</h2>
+        <p>Descubri las ultimas tendencias en ropa.</p>
+      </section>
     </main>
   );
 }

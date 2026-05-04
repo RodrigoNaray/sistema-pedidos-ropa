@@ -1,9 +1,124 @@
-* {
+/* ============================================
+   GLOBAL CSS - Editoria Minimalista Design System
+   ============================================ */
+
+/* --- Variables CSS (Theme Tokens) --- */
+:root {
+  /* Colores */
+  --color-bg-primary: #FDFBF7;
+  --color-bg-secondary: #F5F2EB;
+  --color-bg-tertiary: #EDEAE3;
+  --color-text-primary: #1A1A1A;
+  --color-text-secondary: #4A4A4A;
+  --color-text-muted: #8A8A8A;
+  --color-accent-green: #4A5D4E;
+  --color-accent-terracotta: #C17A5C;
+  --color-border: #E0DDD5;
+  --color-border-hover: #C17A5C;
+  --color-success: #4A5D4E;
+  --color-warning: #C17A5C;
+  --color-error: #B84A3A;
+
+  /* Espaciado */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+
+  /* Tipografia */
+  --font-heading: 'Lora', serif;
+  --font-body: 'Inter', sans-serif;
+  --font-size-xs: 0.75rem;   /* 12px */
+  --font-size-sm: 0.875rem;  /* 14px */
+  --font-size-md: 1rem;      /* 16px */
+  --font-size-lg: 1.25rem;   /* 20px */
+  --font-size-xl: 1.5rem;    /* 24px */
+  --font-size-2xl: 2rem;     /* 32px */
+  --font-size-3xl: 2.5rem;   /* 40px */
+
+  /* Otros */
+  --border-radius-sm: 2px;
+  --border-radius: 4px;
+}
+
+/* --- Reset CSS --- */
+*,
+*::before,
+*::after {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  font-family: var(--font-body);
+  font-weight: 400;
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* --- Tipografia --- */
+h1, h2, h3, h4 {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  line-height: 1.3;
+}
+
+h1 { font-size: var(--font-size-3xl); }
+h2 { font-size: var(--font-size-2xl); }
+h3 { font-size: var(--font-size-xl); }
+h4 { font-size: var(--font-size-lg); }
+
+p {
+  font-family: var(--font-body);
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* --- Utilidades --- */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* --- Responsive (Mobile-First) --- */
+@media (min-width: 640px) {
+  :root {
+    --space-2xl: 64px;
+  }
+}
+
+@media (min-width: 768px) {
+  :root {
+    --space-2xl: 80px;
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --space-2xl: 96px;
+  }
 }
