@@ -36,7 +36,12 @@ export class ProductoController {
     @Query('pagina') pagina?: number,
     @Query('tamano') tamano?: number,
   ) {
-    return this.productoService.listar({ activo, talle, pagina, tamano });
+    const filtros: { activo?: boolean; talle?: string; pagina?: number; tamano?: number } = {};
+    if (activo !== undefined) filtros.activo = activo;
+    if (talle !== undefined) filtros.talle = talle;
+    if (pagina !== undefined) filtros.pagina = pagina;
+    if (tamano !== undefined) filtros.tamano = tamano;
+    return this.productoService.listar(filtros);
   }
 
   @Get(':id')
