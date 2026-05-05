@@ -2,6 +2,7 @@ import { obtenerProductosActivos } from '@/services/producto.service';
 import TarjetaProducto from '@/components/client/tarjeta-producto';
 import Loading from './loading';
 import Error from './error';
+import styles from './styles.module.css';
 
 export const metadata = {
   title: 'Productos | Tienda de Ropa',
@@ -28,31 +29,24 @@ export default async function ProductosPage({
     return <Error error={result.error} />;
   }
 
-  const { productos, total } = result.value;
+  const { productos } = result.value;
 
   if (productos.length === 0) {
     return (
       <main>
-        <h1>Productos</h1>
-        <p>No se encontraron productos.</p>
+        <h1 className={styles.titulo}>Productos</h1>
+        <p className={styles.vacio}>No se encontraron productos.</p>
       </main>
     );
   }
 
   return (
     <main>
-      <h1>Productos</h1>
+      <h1 className={styles.titulo}>Productos</h1>
       <section>
-        <ul style={{
-          listStyle: 'none',
-          margin: 0,
-          padding: 0,
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-          gap: 'var(--space-lg)',
-        }}>
+        <ul className={styles.grid}>
           {productos.map((producto) => (
-            <li key={producto.id} style={{ margin: 0 }}>
+            <li key={producto.id}>
               <TarjetaProducto
                 id={producto.id}
                 nombre={producto.nombre}

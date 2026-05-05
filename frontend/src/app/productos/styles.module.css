@@ -1,0 +1,23 @@
+/* Pagina de productos - Estilos del catalogo */
+
+.titulo {
+  font-family: 'Lora', serif;
+  font-weight: 600;
+  font-size: 2rem;
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-lg);
+}
+
+.grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-lg);
+}
+
+.vacio {
+  font-family: 'Inter', sans-serif;
+  color: var(--color-text-secondary);
+}
