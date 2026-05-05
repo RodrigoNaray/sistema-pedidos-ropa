@@ -84,7 +84,7 @@ describe('ProductoController', () => {
         tamano: 20,
       });
 
-      const result = await controller.listar('true', 'M', 1, 20);
+      const result = await controller.listar(true, 'M', 1, 20);
 
       expect(service.listar).toHaveBeenCalledWith({
         activo: true,
