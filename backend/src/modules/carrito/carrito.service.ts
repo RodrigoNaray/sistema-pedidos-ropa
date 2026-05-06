@@ -34,7 +34,7 @@ export class CarritoService {
       throw new BadRequestException('Stock insuficiente');
     }
 
-    if (talle && producto.talle !== talle) {
+    if (talle && !producto.tallas.includes(talle)) {
       throw new BadRequestException('El talle seleccionado no corresponde con el producto');
     }
 

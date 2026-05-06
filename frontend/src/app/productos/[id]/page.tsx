@@ -1,6 +1,15 @@
+/**
+ * Pagina de detalle de producto (cliente).
+ * Muestra galeria, info del producto y formulario de agregar al carrito.
+ */
+
+'use client';
+
 import type { Metadata } from 'next';
+import { use } from 'react';
 import { obtenerProductoPorId } from '@/services/producto.service';
 import styles from './styles.module.css';
+import CarritoAgregar from '@/components/carrito/carrito-agregar';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -24,9 +33,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function ProductoDetallePage({ params }: Props) {
-  const { id } = await params;
-  const result = await obtenerProductoPorId(id);
+export default function ProductoDetallePage({ params }: Props) {
+  const { id } = use(params);
+  const result = use(obtenerProductoPorId(id));
 
   if (!result.ok) {
     return (
@@ -69,8 +78,8 @@ export default async function ProductoDetallePage({ params }: Props) {
           talle={producto.talle}
           precioCentavos={producto.precioCentavos}
           descripcion={producto.descripcion}
-          activo={producto.activo}
           stock={producto.stock}
+          productoId={producto.id}
         />
       </section>
     </main>
@@ -109,15 +118,15 @@ function DetalleProductoInfo({
   talle,
   precioCentavos,
   descripcion,
-  activo,
   stock,
+  productoId,
 }: {
   nombre: string;
   talle: string;
   precioCentavos: number;
   descripcion: string | null;
-  activo: boolean;
   stock: number;
+  productoId: string;
 }) {
   const precioFormateado = new Intl.NumberFormat('es-AR', {
     style: 'currency',
@@ -134,15 +143,11 @@ function DetalleProductoInfo({
       <p className={styles.descripcion}>
         {descripcion || 'Sin descripcion disponible.'}
       </p>
-      {activo && stock > 0 && (
-        <button className={styles.botonCarrito} disabled>
-          Agregar al carrito (Pronto)
-        </button>
-      )}
-      {!activo && <p className={styles.inactivo}>Producto desactivado</p>}
-      {activo && stock === 0 && (
-        <p className={styles.inactivo}>Agotado - Sin stock disponible</p>
-      )}
+
+      <CarritoAgregar
+        productoId={productoId}
+        stockDisponible={stock}
+      />
     </div>
   );
 }

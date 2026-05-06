@@ -1,0 +1,146 @@
+/* CarritoAgregar - Estilos del formulario de agregar al carrito */
+
+.contenedor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  margin-top: var(--space-md);
+}
+
+.grupoCantidad {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.labelCantidad {
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.controladorCantidad {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.botonCantidad {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-lg);
+  cursor: pointer;
+  transition: background-color 200ms ease-out,
+              color 200ms ease-out;
+}
+
+.botonCantidad:hover:not(:disabled) {
+  background: var(--color-bg-tertiary);
+}
+
+.botonCantidad:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.inputCantidad {
+  width: 56px;
+  height: 40px;
+  text-align: center;
+  border: none;
+  border-left: 1px solid var(--color-border);
+  border-right: 1px solid var(--color-border);
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  background: var(--color-bg-primary);
+  outline: none;
+}
+
+.inputCantidad::-webkit-inner-spin-button,
+.inputCantidad::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+}
+
+.mensajeError {
+  font-family: var(--font-body);
+  font-size: var(--font-size-xs);
+  color: var(--color-error);
+  margin-top: var(--space-xs);
+}
+
+.mensajeExito {
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  color: var(--color-success);
+  margin-top: var(--space-xs);
+}
+
+.botonAgregar {
+  width: 100%;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-accent-green);
+  border-radius: var(--border-radius);
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-accent-green);
+  cursor: pointer;
+  transition: background-color 200ms ease-out,
+              color 200ms ease-out,
+              border-color 200ms ease-out;
+}
+
+.botonAgregar:hover:not(:disabled) {
+  background: var(--color-accent-green);
+  color: var(--color-bg-primary);
+}
+
+.botonAgregar:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  border-color: var(--color-text-muted);
+  color: var(--color-text-muted);
+}
+
+.botonAgregar.solicitando {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.divisor {
+  height: 1px;
+  background: var(--color-border);
+  border: none;
+  margin: var(--space-sm) 0;
+}
+
+.total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-body);
+}
+
+.labelTotal {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.valorTotal {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
