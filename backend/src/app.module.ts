@@ -7,6 +7,7 @@ import { AdministradorModule } from '@modules/administrador/administrador.module
 import { ConfiguracionTiendaModule } from '@modules/configuracion/configuracion-tienda.module';
 import { NotificacionModule } from '@modules/notificacion/notificacion.module';
 import { DatabaseModule } from '@common/config/database/database.module';
+import { CarritoModule } from '@modules/carrito/carrito.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { DatabaseModule } from '@common/config/database/database.module';
     AdministradorModule,
     ConfiguracionTiendaModule,
     NotificacionModule,
+    CarritoModule,
   ],
 })
 export class AppModule {}
