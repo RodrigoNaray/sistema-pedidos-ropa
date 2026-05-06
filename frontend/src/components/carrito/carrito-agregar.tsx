@@ -1,21 +1,42 @@
-import type { PropsWithChildren, ReactNode } from 'react';
+/**
+ * Componente CarritoAgregar - CU-03: Agregar producto al carrito
+ * 
+ * Permite al usuario seleccionar cantidad y agregar un producto al carrito.
+ * Utiliza el contexto global del carrito y sincroniza con el backend.
+ */
+
 import { useState, useCallback } from 'react';
 import styles from './carrito-agregar.module.css';
 import { useCarrito } from './carrito-context';
 
 interface Props {
+  /** ID del producto a agregar */
   productoId: string;
+  /** Stock disponible del producto */
   stockDisponible: number;
+  /** Callback opcional al exito */
   onExito?: (mensaje: string) => void;
+  /** Callback opcional al error */
   onError?: (mensaje: string) => void;
 }
 
-export default function CarritoAgregar({ productoId, stockDisponible, onExito, onError }: PropsWithChildren<Props>) {
+export default function CarritoAgregar({
+  productoId,
+  stockDisponible,
+  onExito,
+  onError,
+}: Props) {
   const { agregarItem } = useCarrito();
+  
   const [cantidad, setCantidad] = useState(1);
   const [estado, setEstado] = useState<'listo' | 'exito' | 'error'>('listo');
   const [mensaje, setMensaje] = useState('');
 
+  // Validar que la cantidad sea valida
+  const cantidadValida = cantidad >= 1 && cantidad <= stockDisponible;
+  const estaDesactivado = !cantidadValida || stockDisponible === 0;
+
+  // Handlers para controlar cantidad
   const decrementar = useCallback(() => {
     setCantidad((prev) => Math.max(1, prev - 1));
   }, []);
@@ -24,6 +45,7 @@ export default function CarritoAgregar({ productoId, stockDisponible, onExito, o
     setCantidad((prev) => Math.min(stockDisponible, prev + 1));
   }, [stockDisponible]);
 
+  // Handler principal para agregar al carrito
   const manejarEnvio = useCallback(async () => {
     setEstado('listo');
     setMensaje('');
@@ -41,11 +63,9 @@ export default function CarritoAgregar({ productoId, stockDisponible, onExito, o
     }
   }, [agregarItem, productoId, cantidad, onExito, onError]);
 
-  const cantidadValida = cantidad > 0 && cantidad <= stockDisponible;
-  const estaDesactivado = !cantidadValida || stockDisponible === 0;
-
   return (
     <div className={styles.contenedor}>
+      {/* Selector de cantidad */}
       <div className={styles.grupoCantidad}>
         <span className={styles.labelCantidad}>Cantidad:</span>
         <div className={styles.controladorCantidad}>
@@ -81,6 +101,7 @@ export default function CarritoAgregar({ productoId, stockDisponible, onExito, o
 
       <hr className={styles.divisor} />
 
+      {/* Boton de agregar al carrito */}
       <button
         type="button"
         className={`${styles.botonAgregar} ${estaDesactivado ? styles.solicitando : ''}`}
@@ -94,6 +115,7 @@ export default function CarritoAgregar({ productoId, stockDisponible, onExito, o
         )}
       </button>
 
+      {/* Mensajes de estado */}
       {estado === 'exito' && (
         <p className={styles.mensajeExito} role="status">{mensaje}</p>
       )}
