@@ -2,6 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { CarritoService } from './carrito.service';
 import { PrismaService } from '@common/config/database/prisma.service';
 import { ValidarCarritoInputDto } from './dto/validar-carrito-input.dto';
+import { AgregarCarritoDto } from './dto/agregar-al-carrito.dto';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 
 describe('CarritoService', () => {
   let service: CarritoService;
@@ -164,6 +166,112 @@ describe('CarritoService', () => {
 
       expect(resultado.items).toHaveLength(2);
       expect(resultado.totalCentavos).toBe(55000);
+    });
+  });
+
+  describe('agregarAlCarrito', () => {
+    const productoCompleto = {
+      id: 'prod-1',
+      nombre: 'Camiseta basica',
+      descripcion: 'Camiseta de algodon',
+      talle: 'M',
+      precioCentavos: BigInt(15000),
+      stock: 10,
+      imagenes: ['https://example.com/img1.jpg'],
+      activo: true,
+      creadoEn: new Date(),
+      actualizadoEn: new Date(),
+    };
+
+    it('debe agregar un producto al carrito correctamente', async () => {
+      prisma.producto.findUnique.mockResolvedValue(productoCompleto);
+
+      const dto: AgregarCarritoDto = {
+        productoId: 'prod-1',
+        cantidad: 2,
+        talle: 'M',
+      };
+
+      const resultado = await service.agregarAlCarrito(dto);
+
+      expect(prisma.producto.findUnique).toHaveBeenCalledWith({
+        where: { id: 'prod-1' },
+      });
+      expect(resultado.mensaje).toBe('Producto agregado al carrito');
+      expect(resultado.carrito).toHaveLength(1);
+      expect(resultado.carrito[0].productoId).toBe('prod-1');
+      expect(resultado.carrito[0].nombre).toBe('Camiseta basica');
+      expect(resultado.carrito[0].precioCentavos).toBe(15000);
+      expect(resultado.carrito[0].cantidad).toBe(2);
+      expect(resultado.carrito[0].subtotalCentavos).toBe(30000);
+    });
+
+    it('debe lanzar NotFoundException cuando el producto no existe', async () => {
+      prisma.producto.findUnique.mockResolvedValue(null);
+
+      const dto: AgregarCarritoDto = {
+        productoId: 'prod-inexistente',
+        cantidad: 1,
+      };
+
+      await expect(service.agregarAlCarrito(dto)).rejects.toThrow(NotFoundException);
+    });
+
+    it('debe lanzar BadRequestException cuando la cantidad es cero', async () => {
+      const dto: AgregarCarritoDto = {
+        productoId: 'prod-1',
+        cantidad: 0,
+      };
+
+      await expect(service.agregarAlCarrito(dto)).rejects.toThrow(BadRequestException);
+      expect(prisma.producto.findUnique).not.toHaveBeenCalled();
+    });
+
+    it('debe lanzar BadRequestException cuando la cantidad es negativa', async () => {
+      const dto: AgregarCarritoDto = {
+        productoId: 'prod-1',
+        cantidad: -1,
+      };
+
+      await expect(service.agregarAlCarrito(dto)).rejects.toThrow(BadRequestException);
+      expect(prisma.producto.findUnique).not.toHaveBeenCalled();
+    });
+
+    it('debe lanzar BadRequestException cuando el stock es insuficiente', async () => {
+      const productoPocoStock = { ...productoCompleto, stock: 1 };
+      prisma.producto.findUnique.mockResolvedValue(productoPocoStock);
+
+      const dto: AgregarCarritoDto = {
+        productoId: 'prod-1',
+        cantidad: 5,
+      };
+
+      await expect(service.agregarAlCarrito(dto)).rejects.toThrow(BadRequestException);
+    });
+
+    it('debe validar el talle si es proporcionado', async () => {
+      const productoTalleS = { ...productoCompleto, talle: 'S' };
+      prisma.producto.findUnique.mockResolvedValue(productoTalleS);
+
+      const dto: AgregarCarritoDto = {
+        productoId: 'prod-1',
+        cantidad: 1,
+        talle: 'M',
+      };
+
+      await expect(service.agregarAlCarrito(dto)).rejects.toThrow(BadRequestException);
+    });
+
+    it('debe permitir agregar sin talle cuando el producto tiene talle unico', async () => {
+      prisma.producto.findUnique.mockResolvedValue(productoCompleto);
+
+      const dto: AgregarCarritoDto = {
+        productoId: 'prod-1',
+        cantidad: 1,
+      };
+
+      const resultado = await service.agregarAlCarrito(dto);
+      expect(resultado.carrito[0].talle).toBe('M');
     });
   });
 });
