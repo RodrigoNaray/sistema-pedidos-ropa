@@ -1,0 +1,130 @@
+.carritoItemCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-lg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  background-color: var(--color-bg-secondary);
+}
+
+@media (min-width: 768px) {
+  .carritoItemCard {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-lg);
+  }
+}
+
+.itemInfo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  flex: 1;
+  min-width: 0;
+}
+
+.itemNombre {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: var(--font-size-md);
+  color: var(--color-text-primary);
+}
+
+.itemTalle {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.itemStock {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.itemStockInsuficiente {
+  color: var(--color-error);
+  font-weight: 500;
+}
+
+.itemCantidad {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.cantidadControl {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.cantidadValor {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 var(--space-sm);
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+}
+
+.botonCantidad {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  font-size: var(--font-size-lg);
+  color: var(--color-text-secondary);
+  background-color: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  transition: all 150ms ease-out;
+}
+
+.botonCantidad:hover {
+  color: var(--color-text-primary);
+  border-color: var(--color-border-hover);
+}
+
+.botonCantidad:active {
+  background-color: var(--color-bg-tertiary);
+}
+
+.botonEliminar {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-md);
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: var(--font-size-xs);
+  color: var(--color-error);
+  background-color: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  transition: all 150ms ease-out;
+}
+
+.botonEliminar:hover {
+  background-color: var(--color-bg-primary);
+  border-color: var(--color-border);
+}
+
+.itemSubtotal {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: var(--font-size-lg);
+  color: var(--color-accent-green);
+  white-space: nowrap;
+}
