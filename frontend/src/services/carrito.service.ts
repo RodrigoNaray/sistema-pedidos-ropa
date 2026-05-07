@@ -5,7 +5,7 @@
 
 type Result<T, E = Error> = { ok: true; value: T } | { ok: false; error: E };
 
-interface CarritoItemResumen {
+export interface CarritoItem {
   productoId: string;
   nombre: string;
   talle: string;
@@ -14,9 +14,20 @@ interface CarritoItemResumen {
   subtotalCentavos: number;
 }
 
+interface CarritoItemValidado extends CarritoItem {
+  stockDisponible: number;
+  stockInsuficiente?: boolean;
+}
+
 interface AgregarCarritoResponse {
   mensaje: string;
-  carrito: CarritoItemResumen[];
+  carrito: CarritoItem[];
+}
+
+interface ValidarCarritoResponse {
+  items: CarritoItemValidado[];
+  totalCentavos: number;
+  hayStockInsuficiente?: boolean;
 }
 
 interface AgregarCarritoDto {
@@ -26,6 +37,50 @@ interface AgregarCarritoDto {
 }
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+
+const STORAGE_KEY = 'carrito_session';
+
+function generarSessionId(): string {
+  const existe = typeof window !== 'undefined' && localStorage.getItem(STORAGE_KEY);
+  if (existe) {
+    return existe;
+  }
+  const nuevo = crypto.randomUUID();
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(STORAGE_KEY, nuevo);
+  }
+  return nuevo;
+}
+
+export function obtenerDelStorage(): CarritoItem[] {
+  if (typeof window === 'undefined') {
+    return [];
+  }
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) {
+    return [];
+  }
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+export function guardarEnStorage(items: CarritoItem[]): void {
+  if (typeof window === 'undefined') {
+    return;
+  }
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+}
+
+export function limpiarStorage(): void {
+  if (typeof window === 'undefined') {
+    return;
+  }
+  localStorage.removeItem(STORAGE_KEY);
+}
 
 export async function agregarAlCarrito(dto: AgregarCarritoDto): Promise<Result<AgregarCarritoResponse>> {
   try {
@@ -44,6 +99,32 @@ export async function agregarAlCarrito(dto: AgregarCarritoDto): Promise<Result<A
     }
 
     const data: AgregarCarritoResponse = await response.json();
+    return { ok: true, value: data };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error : new Error('Unknown error'),
+    };
+  }
+}
+
+export async function validarCarrito(items: CarritoItem[]): Promise<Result<ValidarCarritoResponse>> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/carrito/validar`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return {
+        ok: false,
+        error: new Error(errorData.message || `Error HTTP: ${response.status}`),
+      };
+    }
+
+    const data: ValidarCarritoResponse = await response.json();
     return { ok: true, value: data };
   } catch (error) {
     return {
