@@ -57,3 +57,22 @@ El frontend está desarrollado con Next.js utilizando el App Router. Proporciona
    ```
 3. Configurar las variables de entorno en ambos directorios (`backend` y `frontend`).
 
+4. Crear la base de datos en PostgreSQL y configurar las credenciales en el archivo `.env` del backend.
+   ```env
+   DATABASE_URL="postgresql://usuario:contraseña@localhost:5432/nombre_base_datos"
+   ```
+
+5. Ejecutar las migraciones de la base de datos:
+   ```bash
+   pnpm prisma:migrate
+   ```
+
+6. Poblar la base de datos con datos iniciales:
+   ```bash
+   pnpm seed
+   ```
+7. Iniciar el proyecto completo (backend y frontend) con un solo comando:
+   ```bash
+   pnpm dev
+   ```
+
