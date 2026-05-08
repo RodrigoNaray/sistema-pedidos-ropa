@@ -55,8 +55,10 @@ El frontend está desarrollado con Next.js utilizando el App Router. Proporciona
    ```bash
    pnpm install
    ```
-3. Configurar las variables de entorno en ambos directorios (`backend` y `frontend`).
-
+3. Configurar las variables de entorno en ambos directorios creando un .env en cada carpta (`backend` y `frontend`).
+    ```bash
+    
+    ```
 4. Crear la base de datos en PostgreSQL y configurar las credenciales en el archivo `.env` del backend.
    ```env
    DATABASE_URL="postgresql://usuario:contraseña@localhost:5432/nombre_base_datos"
