@@ -1,74 +1,210 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '@common/config/database/prisma.service';
 import { CreatePedidoDto } from './dto/create-pedido.dto';
+
+export interface StockInsuficienteError {
+  productoId: string;
+  nombre: string;
+  talle: string;
+  pedido: number;
+  disponible: number;
+}
+
+export interface CreatePedidoResult {
+  id: string;
+  codigo: string;
+  emailComprador: string;
+  telefonoComprador: string;
+  estado: string;
+  totalCentavos: number;
+  items: PedidoItemResumen[];
+  creadoEn: Date;
+  vencidoEn: Date;
+}
+
+export interface PedidoItemResumen {
+  id: string;
+  productoId: string;
+  cantidad: number;
+  precioUnitarioCentavos: number;
+  subtotalCentavos: number;
+  producto: {
+    nombre: string;
+    talle: string;
+  };
+}
 
 @Injectable()
 export class PedidoService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async crear(data: CreatePedidoDto) {
-    const { emailComprador, telefonoComprador, items } = data;
+  private static readonly estadoPendientePago = 'PENDIENTE_PAGO' as const;
+  private static readonly estadoPagoConfirmado = 'PAGO_CONFIRMADO' as const;
+  private static readonly estadoCancelado = 'CANCELADO' as const;
 
-    const productosMap = new Map<string, bigint>();
-    let totalCentavos = BigInt(0);
+  private static readonly canalEmail = 'EMAIL' as const;
+  private static readonly canalPanel = 'PANEL' as const;
 
-    for (const item of items) {
+  async crear(
+    data: CreatePedidoDto,
+  ): Promise<{ mensaje: string; pedido: CreatePedidoResult }> {
+    const emailValido = PedidoService.validarEmail(data.emailComprador);
+    if (!emailValido) {
+      throw new BadRequestException('El email no tiene un formato válido');
+    }
+
+    if (!data.telefonoComprador || data.telefonoComprador.trim() === '') {
+      throw new BadRequestException('El teléfono es obligatorio');
+    }
+
+    if (!data.items || data.items.length === 0) {
+      throw new BadRequestException('El carrito está vacío');
+    }
+
+    const productosMap = new Map<
+      string,
+      {
+        id: string;
+        nombre: string;
+        talle: string;
+        precioCentavos: bigint;
+        stock: number;
+      }
+    >();
+
+    const stockInsuficientes: StockInsuficienteError[] = [];
+
+    for (const item of data.items) {
       const producto = await this.prisma.producto.findUnique({
         where: { id: item.productoId },
+        select: {
+          id: true,
+          nombre: true,
+          talle: true,
+          precioCentavos: true,
+          stock: true,
+        },
       });
 
       if (!producto) {
-        throw new NotFoundException(`Producto ${item.productoId} no encontrado`);
+        throw new NotFoundException(
+          `Producto con ID ${item.productoId} no encontrado`,
+        );
       }
 
       if (producto.stock < item.cantidad) {
-        throw new Error(`Stock insuficiente para ${producto.nombre}`);
+        stockInsuficientes.push({
+          productoId: producto.id,
+          nombre: producto.nombre,
+          talle: producto.talle,
+          pedido: item.cantidad,
+          disponible: producto.stock,
+        });
+        continue;
       }
 
-      const precio = BigInt(producto.precioCentavos);
-      totalCentavos += precio * BigInt(item.cantidad);
-      productosMap.set(item.productoId, precio);
+      productosMap.set(item.productoId, {
+        id: producto.id,
+        nombre: producto.nombre,
+        talle: producto.talle,
+        precioCentavos: producto.precioCentavos,
+        stock: producto.stock,
+      });
+    }
+
+    if (stockInsuficientes.length > 0) {
+      const productosAfectados = stockInsuficientes
+        .map(
+          (s) =>
+            `${s.nombre} (talle: ${s.talle}, pedido: ${s.pedido}, disponible: ${s.disponible})`,
+        )
+        .join('; ');
+
+      throw new BadRequestException(
+        `Stock insuficiente: ${productosAfectados}`,
+      );
     }
 
     const codigo = this.generarCodigoReferencia();
     const ahora = new Date();
-    const vencidoEn = new Date(ahora.getTime() + 48 * 60 * 60 * 1000);
+    const vencidoEn = new Date(
+      ahora.getTime() + this.obtenerVencimientoHoras() * 60 * 60 * 1000,
+    );
+
+    let totalCentavosBig = BigInt(0);
+
+    const itemsData = data.items.map((item) => {
+      const producto = productosMap.get(item.productoId);
+      if (!producto) {
+        throw new NotFoundException(
+          `Producto ${item.productoId} no encontrado`,
+        );
+      }
+
+      const subtotal = BigInt(producto.precioCentavos) * BigInt(item.cantidad);
+      totalCentavosBig += subtotal;
+
+      return {
+        productoId: item.productoId,
+        cantidad: item.cantidad,
+        precioUnitarioCentavos: producto.precioCentavos,
+        subtotalCentavos: subtotal,
+      };
+    });
 
     const pedido = await this.prisma.pedido.create({
       data: {
-        emailComprador,
-        telefonoComprador,
-        totalCentavos,
+        emailComprador: data.emailComprador.trim(),
+        telefonoComprador: data.telefonoComprador.trim(),
+        totalCentavos: totalCentavosBig,
         codigo,
         vencidoEn,
-        estado: 'PENDIENTE_PAGO',
+        estado: PedidoService.estadoPendientePago,
         items: {
-          create: items.map((item) => {
-            const precio = productosMap.get(item.productoId);
-            if (!precio) {
-              throw new NotFoundException(`Precio no encontrado para producto ${item.productoId}`);
-            }
-            return {
-              productoId: item.productoId,
-              cantidad: item.cantidad,
-              precioUnitarioCentavos: precio,
-              subtotalCentavos: precio * BigInt(item.cantidad),
-            };
-          }),
+          create: itemsData,
         },
       },
-      include: { items: true },
+      include: { items: { include: { producto: true } } },
     });
 
     await this.prisma.notificacion.create({
       data: {
-        canal: 'EMAIL',
-        mensaje: `Nuevo pedido ${codigo} recibido de ${emailComprador}`,
+        canal: PedidoService.canalPanel,
+        mensaje: `Nuevo pedido ${codigo} recibido de ${pedido.emailComprador}`,
         pedidoId: pedido.id,
       },
     });
 
-    return pedido;
+    const pedidoResultado: CreatePedidoResult = {
+      id: pedido.id,
+      codigo: pedido.codigo,
+      emailComprador: pedido.emailComprador,
+      telefonoComprador: pedido.telefonoComprador,
+      estado: pedido.estado,
+      totalCentavos: Number(pedido.totalCentavos),
+      items: pedido.items.map((i) => ({
+        id: i.id,
+        productoId: i.productoId,
+        cantidad: i.cantidad,
+        precioUnitarioCentavos: Number(i.precioUnitarioCentavos),
+        subtotalCentavos: Number(i.subtotalCentavos),
+        producto: {
+          nombre: i.producto.nombre,
+          talle: i.producto.talle,
+        },
+      })),
+      creadoEn: pedido.creadoEn,
+      vencidoEn: pedido.vencidoEn,
+    };
+
+    return {
+      mensaje: 'Pedido creado exitosamente',
+      pedido: pedidoResultado,
+    };
   }
 
   async obtenerUno(id: string) {
@@ -81,7 +217,28 @@ export class PedidoService {
       throw new NotFoundException('Pedido no encontrado');
     }
 
-    return pedido;
+    return {
+      id: pedido.id,
+      codigo: pedido.codigo,
+      emailComprador: pedido.emailComprador,
+      telefonoComprador: pedido.telefonoComprador,
+      estado: pedido.estado,
+      totalCentavos: Number(pedido.totalCentavos),
+      creadoEn: pedido.creadoEn,
+      confirmadoEn: pedido.confirmadoEn,
+      vencidoEn: pedido.vencidoEn,
+      items: pedido.items.map((i) => ({
+        id: i.id,
+        productoId: i.productoId,
+        cantidad: i.cantidad,
+        precioUnitarioCentavos: Number(i.precioUnitarioCentavos),
+        subtotalCentavos: Number(i.subtotalCentavos),
+        producto: {
+          nombre: i.producto.nombre,
+          talle: i.producto.talle,
+        },
+      })),
+    };
   }
 
   async confirmarPago(id: string) {
@@ -94,8 +251,8 @@ export class PedidoService {
       throw new NotFoundException('Pedido no encontrado');
     }
 
-    if (pedido.estado === 'PAGO_CONFIRMADO') {
-      throw new Error('El pedido ya está confirmado');
+    if (pedido.estado === PedidoService.estadoPagoConfirmado) {
+      throw new BadRequestException('El pedido ya está confirmado');
     }
 
     for (const item of pedido.items) {
@@ -108,7 +265,7 @@ export class PedidoService {
     const actualizado = await this.prisma.pedido.update({
       where: { id },
       data: {
-        estado: 'PAGO_CONFIRMADO',
+        estado: PedidoService.estadoPagoConfirmado,
         confirmadoEn: new Date(),
       },
       include: { items: { include: { producto: true } } },
@@ -116,13 +273,24 @@ export class PedidoService {
 
     await this.prisma.notificacion.create({
       data: {
-        canal: 'EMAIL',
+        canal: PedidoService.canalPanel,
         mensaje: `Pedido ${pedido.codigo} confirmado`,
         pedidoId: pedido.id,
       },
     });
 
-    return actualizado;
+    return {
+      id: actualizado.id,
+      codigo: actualizado.codigo,
+      estado: actualizado.estado,
+      confirmadoEn: actualizado.confirmadoEn,
+      totalCentavos: Number(actualizado.totalCentavos),
+    };
+  }
+
+  private static validarEmail(email: string): boolean {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
   }
 
   private generarCodigoReferencia(): string {
@@ -134,5 +302,9 @@ export class PedidoService {
     }
 
     return `PED-${codigo.join('')}`;
+  }
+
+  private obtenerVencimientoHoras(): number {
+    return 48;
   }
 }
