@@ -1,6 +1,14 @@
-import { IsString, IsNumber, IsArray, Min } from 'class-validator';
+import {
+  IsString,
+  IsNumber,
+  IsArray,
+  Min,
+  IsNotEmpty,
+  IsEmail,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 class ItemDto {
   @ApiProperty({ description: 'ID del producto', example: '550e8400-e29b-41d4-a716-446655440000' })
@@ -20,17 +28,24 @@ class ItemDto {
 
 export class CreatePedidoDto {
   @ApiProperty({ description: 'Email del comprador', example: 'comprador@email.com' })
-  @IsString()
+  @IsEmail()
+  @IsNotEmpty()
   readonly emailComprador: string;
 
   @ApiProperty({ description: 'Teléfono del comprador', example: '+59899123456' })
   @IsString()
+  @IsNotEmpty()
   readonly telefonoComprador: string;
 
   @ApiProperty({ description: 'Items del pedido', type: [ItemDto] })
   @IsArray()
+  @ValidateNested({ each: true })
   @Type(() => ItemDto)
   readonly items: ItemDto[];
+
+  @ApiPropertyOptional({ description: 'Talles de los productos (opcional)', example: ['M', 'L'] })
+  @IsString({ each: true })
+  readonly talles?: string[];
 
   constructor(emailComprador: string, telefonoComprador: string, items: ItemDto[]) {
     this.emailComprador = emailComprador;
