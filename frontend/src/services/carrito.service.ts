@@ -24,7 +24,7 @@ interface AgregarCarritoResponse {
   carrito: CarritoItem[];
 }
 
-interface ValidarCarritoResponse {
+export interface ValidarCarritoResponse {
   items: CarritoItemValidado[];
   totalCentavos: number;
   hayStockInsuficiente?: boolean;
@@ -35,6 +35,13 @@ interface AgregarCarritoDto {
   cantidad: number;
   talle?: string;
 }
+
+interface ActualizarCarritoDto {
+  cantidad: number;
+}
+
+interface ActualizarCarritoResponse extends CarritoItem {}
+
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
@@ -125,6 +132,61 @@ export async function validarCarrito(items: CarritoItem[]): Promise<Result<Valid
     }
 
     const data: ValidarCarritoResponse = await response.json();
+    return { ok: true, value: data };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error : new Error('Unknown error'),
+    };
+  }
+}
+
+export async function actualizarCantidadEnCarrito(
+  productoId: string,
+  dto: ActualizarCarritoDto,
+): Promise<Result<ActualizarCarritoResponse>> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/carrito/items/${productoId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dto),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return {
+        ok: false,
+        error: new Error(errorData.message || `Error HTTP: ${response.status}`),
+      };
+    }
+
+    const data: ActualizarCarritoResponse = await response.json();
+    return { ok: true, value: data };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error : new Error('Unknown error'),
+    };
+  }
+}
+
+export async function eliminarDelCarrito(
+  productoId: string,
+): Promise<Result<{ mensaje: string }>> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/carrito/items/${productoId}`, {
+      method: 'DELETE',
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return {
+        ok: false,
+        error: new Error(errorData.message || `Error HTTP: ${response.status}`),
+      };
+    }
+
+    const data: { mensaje: string } = await response.json();
     return { ok: true, value: data };
   } catch (error) {
     return {

@@ -52,6 +52,6 @@ export class CarritoController {
     if (!productoId) {
       throw new BadRequestException('El ID del producto es obligatorio');
     }
-    return this.carritoService.eliminarDelCarrito(productoId, '' as string);
+    return this.carritoService.eliminarDelCarrito(productoId);
   }
 }

@@ -28,40 +28,79 @@ export interface ValidarCarritoResult {
 export class CarritoService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async agregarAlCarrito(dto: AgregarCarritoDto): Promise<{ mensaje: string; carrito: CarritoItemResumen[] }> {
-    const { productoId, cantidad, talle } = dto;
+  private calcularSubtotal(precioUnitarioCentavos: number, cantidad: number): number {
+    const precioBig = BigInt(precioUnitarioCentavos);
+    const subtotalBig = precioBig * BigInt(cantidad);
+    return Number(subtotalBig);
+  }
 
-    if (cantidad <= 0) {
-      throw new BadRequestException('La cantidad debe ser mayor a cero');
-    }
-
+  async obtenerProductoPorId(productoId: string): Promise<{
+    id: string;
+    nombre: string;
+    talle: string;
+    precioCentavos: bigint;
+    stock: number;
+  }> {
     const producto = await this.prisma.producto.findUnique({
       where: { id: productoId },
+      select: {
+        id: true,
+        nombre: true,
+        talle: true,
+        precioCentavos: true,
+        stock: true,
+      },
     });
 
     if (!producto) {
       throw new NotFoundException(`Producto con ID ${productoId} no encontrado`);
     }
 
+    return producto;
+  }
+
+  async validarYConvertirAResumen(
+    producto: {
+      id: string;
+      nombre: string;
+      talle: string;
+      precioCentavos: bigint | number;
+      stock: number;
+    },
+    cantidad: number,
+  ): Promise<CarritoItemResumen> {
+    if (cantidad <= 0) {
+      throw new BadRequestException('La cantidad debe ser mayor a cero');
+    }
+
     if (cantidad > producto.stock) {
       throw new BadRequestException('Stock insuficiente');
     }
+
+    const precioCentavosNum: number = typeof producto.precioCentavos === 'bigint'
+      ? Number(producto.precioCentavos)
+      : producto.precioCentavos;
+
+    return {
+      productoId: producto.id,
+      nombre: producto.nombre,
+      talle: producto.talle,
+      precioCentavos: precioCentavosNum,
+      cantidad,
+      subtotalCentavos: this.calcularSubtotal(precioCentavosNum, cantidad),
+    };
+  }
+
+  async agregarAlCarrito(dto: AgregarCarritoDto): Promise<{ mensaje: string; carrito: CarritoItemResumen[] }> {
+    const { productoId, cantidad, talle } = dto;
+
+    const producto = await this.obtenerProductoPorId(productoId);
 
     if (talle && producto.talle !== talle) {
       throw new BadRequestException('El talle seleccionado no corresponde con el producto');
     }
 
-    const precioBig = BigInt(producto.precioCentavos);
-    const subtotalBig = precioBig * BigInt(cantidad);
-
-    const itemResumen: CarritoItemResumen = {
-      productoId: producto.id,
-      nombre: producto.nombre,
-      talle: producto.talle,
-      precioCentavos: Number(precioBig),
-      cantidad,
-      subtotalCentavos: Number(subtotalBig),
-    };
+    const itemResumen: CarritoItemResumen = await this.validarYConvertirAResumen(producto, cantidad);
 
     return {
       mensaje: 'Producto agregado al carrito',
@@ -92,21 +131,20 @@ export class CarritoService {
         continue;
       }
 
-      const precioBig = BigInt(producto.precioCentavos);
-      const subtotalBig = precioBig * BigInt(itemCarrito.cantidad);
       const stockInsuficiente = itemCarrito.cantidad > producto.stock;
 
       if (stockInsuficiente) {
         hayStockInsuficiente = true;
       }
 
+      const precioCentavosNum = Number(producto.precioCentavos);
       const itemValidado: CarritoItemValidado = {
         productoId: producto.id,
         nombre: producto.nombre,
         talle: producto.talle,
-        precioCentavos: Number(precioBig),
+        precioCentavos: precioCentavosNum,
         cantidad: itemCarrito.cantidad,
-        subtotalCentavos: Number(subtotalBig),
+        subtotalCentavos: this.calcularSubtotal(precioCentavosNum, itemCarrito.cantidad),
         stockDisponible: producto.stock,
         stockInsuficiente,
       };
@@ -115,7 +153,7 @@ export class CarritoService {
     }
 
     const totalBig = itemsValidados.reduce(
-      (acc, item) => acc + BigInt(item.subtotalCentavos),
+      (acumulador, item) => acumulador + BigInt(item.subtotalCentavos),
       BigInt(0),
     );
 
@@ -132,56 +170,17 @@ export class CarritoService {
     dto: ActualizarCarritoDto,
   ): Promise<CarritoItemResumen> {
     const { cantidad } = dto;
-
-    if (cantidad <= 0) {
-      throw new BadRequestException('La cantidad debe ser mayor a cero');
-    }
-
-    const producto = await this.prisma.producto.findUnique({
-      where: { id: productoId },
-    });
-
-    if (!producto) {
-      throw new NotFoundException(`Producto con ID ${productoId} no encontrado`);
-    }
+    const producto = await this.obtenerProductoPorId(productoId);
 
     if (talle && producto.talle !== talle) {
       throw new BadRequestException('El talle seleccionado no corresponde con el producto');
     }
 
-    if (cantidad > producto.stock) {
-      throw new BadRequestException('Stock insuficiente');
-    }
-
-    const precioBig = BigInt(producto.precioCentavos);
-    const subtotalBig = precioBig * BigInt(cantidad);
-
-    return {
-      productoId: producto.id,
-      nombre: producto.nombre,
-      talle: producto.talle,
-      precioCentavos: Number(precioBig),
-      cantidad,
-      subtotalCentavos: Number(subtotalBig),
-    };
+    return this.validarYConvertirAResumen(producto, cantidad);
   }
 
-  async eliminarDelCarrito(
-    productoId: string,
-    talle: string,
-  ): Promise<CarritoItemResumen[]> {
-    const producto = await this.prisma.producto.findUnique({
-      where: { id: productoId },
-    });
-
-    if (!producto) {
-      throw new NotFoundException(`Producto con ID ${productoId} no encontrado`);
-    }
-
-    if (talle && producto.talle !== talle) {
-      throw new BadRequestException('El talle seleccionado no corresponde con el producto');
-    }
-
-    return [];
+  async eliminarDelCarrito(productoId: string): Promise<void> {
+    const producto = await this.obtenerProductoPorId(productoId);
+    void producto;
   }
 }

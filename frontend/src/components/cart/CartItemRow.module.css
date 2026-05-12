@@ -1,0 +1,244 @@
+/* == CartItemRow -- Editoria Minimalista Design System == */
+
+.contenedor {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: var(--space-md);
+  padding: var(--space-lg);
+  background-color: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  transition: border-color 150ms ease-out;
+}
+
+.contenedor:hover {
+  border-color: var(--color-border-hover);
+}
+
+/* Imagen */
+.imagenWrapper {
+  width: 80px;
+  height: 100px;
+  flex-shrink: 0;
+}
+
+.imagenPlaceholder {
+  width: 100%;
+  height: 100%;
+  background-color: var(--color-bg-tertiary);
+  border-radius: var(--border-radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.imagenTexto {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-lg);
+  color: var(--color-text-muted);
+}
+
+/* Informacion del producto */
+.informacion {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  min-width: 0;
+}
+
+.encabezadoProducto {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+}
+
+.nombreProducto {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.talle {
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+/* Estados de stock */
+.estadoOk {
+  font-size: var(--font-size-xs);
+  color: var(--color-success);
+  font-weight: 500;
+}
+
+.estadoMinimo {
+  font-size: var(--font-size-xs);
+  color: var(--color-warning);
+  font-weight: 500;
+}
+
+.estadoInsuficiente {
+  font-size: var(--font-size-xs);
+  color: var(--color-error);
+  font-weight: 500;
+}
+
+.estadoAgotado {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+/* Row precio-cantidad-subtotal */
+.rowPrecioCantidad {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--color-bg-tertiary);
+  margin-top: var(--space-xs);
+}
+
+.seccionCantidad {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.labelCantidad {
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.controlCantidad {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.botoncantidad {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-md);
+  cursor: pointer;
+  transition: border-color 150ms ease-out, opacity 150ms ease-out;
+  user-select: none;
+}
+
+.botoncantidad:hover:not(:disabled) {
+  border-color: var(--color-border-hover);
+}
+
+.botoncantidad:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.inputCantidad {
+  width: 48px;
+  height: 32px;
+  text-align: center;
+  border: 1px solid var(--color-border);
+  border-left: none;
+  border-right: none;
+  border-radius: 0;
+  background-color: transparent;
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  outline: none;
+  -moz-appearance: textfield;
+}
+
+.inputCantidad::-webkit-outer-spin-button,
+.inputCantidad::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.seccionPrecio {
+  display: flex;
+  align-items: center;
+}
+
+.precioUnitario {
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.seccionSubtotal {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.labelSubtotal {
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.valorSubtotal {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+/* Boton eliminar */
+.botoneEliminar {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--border-radius-sm);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: border-color 150ms ease-out, color 150ms ease-out;
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.botoneEliminar:hover {
+  border-color: var(--color-error);
+  color: var(--color-error);
+}
+
+/* Responsive */
+@media (max-width: 639px) {
+  .contenedor {
+    grid-template-columns: auto 1fr;
+    gap: var(--space-md);
+  }
+
+  .botoneEliminar {
+    grid-column: 1 / -1;
+    justify-self: flex-end;
+    margin-top: var(--space-xs);
+  }
+
+  .rowPrecioCantidad {
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+  }
+}
