@@ -7,9 +7,9 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ----------------------------------------------------
+// ------              --------------------------------
 // Enumeraciones
-// ----------------------------------------------------
+// ------              --------------------------------
 
 enum EstadoPedido {
   PENDIENTE_PAGO
@@ -22,9 +22,9 @@ enum CanalNotificacion {
   PANEL
 }
 
-// ----------------------------------------------------
+// ------              --------------------------------
 // Clases del Dominio (Entidades persistentes)
-// ----------------------------------------------------
+// ------              --------------------------------
 
 model Producto {
   id               String    @id @default(uuid())
@@ -95,11 +95,12 @@ model Notificacion {
 }
 
 model Administrador {
-  id          String   @id @default(uuid())
-  nombre      String
-  email       String   @unique
-  claveHash   String
-  creadoEn    DateTime @default(now())
+  id            String   @id @default(uuid())
+  nombre        String
+  email         String   @unique
+  claveHash     String
+  creadoEn      DateTime @default(now())
+  ultimoAccesoEn DateTime?
 
   @@map("administradores")
 }
