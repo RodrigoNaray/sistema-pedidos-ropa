@@ -31,13 +31,27 @@ export class AuthService {
   ) {}
 
   async validarAdmin(email: string, password: string): Promise<AuthResponse> {
-    const admin: { id: string; email: string; claveHash: string; nombre: string } | null = await this.prisma.administrador.findUnique({ where: { email } });
-    if (!admin) throw new UnauthorizedException('Credenciales inválidas');
+    if (!email || !password) {
+      throw new UnauthorizedException('Complete todos los campos');
+    }
 
-    const passwordMatch: boolean = await bcrypt.compare(password, admin.claveHash);
-    if (!passwordMatch) throw new UnauthorizedException('Credenciales inválidas');
+    const admin = await this.prisma.administrador.findUnique({ where: { email } });
+    if (!admin) {
+      throw new UnauthorizedException('Email no registrado');
+    }
+
+    const passwordMatch = await bcrypt.compare(password, admin.claveHash);
+    if (!passwordMatch) {
+      throw new UnauthorizedException('Clave incorrecta');
+    }
+
+    await this.prisma.administrador.update({
+      where: { id: admin.id },
+      data: { ultimoAccesoEn: new Date() },
+    });
 
     const payload = { sub: admin.id, email: admin.email, rol: 'admin' as const };
+
     return {
       accessToken: this.jwtService.sign(payload),
       admin: { id: admin.id, nombre: admin.nombre, email: admin.email },
@@ -45,14 +59,15 @@ export class AuthService {
   }
 
   async registrarAdmin(nombre: string, email: string, password: string): Promise<AdminCreateResult> {
-    const existingAdmin: { id: string; email: string; claveHash: string; nombre: string } | null = await this.prisma.administrador.findUnique({ where: { email } });
-    if (existingAdmin) throw new Error('El email ya está registrado');
+    const existingAdmin = await this.prisma.administrador.findUnique({ where: { email } });
+    if (existingAdmin) {
+      throw new Error('El email ya está registrado');
+    }
 
-    const hashedPassword: string = await bcrypt.hash(password, 12);
-    const admin: AdminCreateResult = await this.prisma.administrador.create({
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    return this.prisma.administrador.create({
       data: { nombre, email, claveHash: hashedPassword },
     });
-
-    return { id: admin.id, nombre: admin.nombre, email: admin.email };
   }
 }
