@@ -1,7 +1,8 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { PedidoService, CreatePedidoResult } from './pedido.service';
 import { CreatePedidoDto } from './dto/create-pedido.dto';
+import { PedidoInstruccionesPagoDto } from './dto/pedido-instrucciones-pago.dto';
 
 @ApiTags('pedidos')
 @Controller('pedidos')
@@ -55,5 +56,25 @@ export class PedidoController {
   })
   async confirmarPago(id: string) {
     return this.pedidoService.confirmarPago(id);
+  }
+
+  @Get(':id/instrucciones-pago')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Obtener instrucciones de pago para un pedido' })
+  @ApiResponse({
+    status: 200,
+    description: 'Instrucciones de pago obtenidas',
+    type: PedidoInstruccionesPagoDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Pedido no encontrado',
+  })
+  @ApiResponse({
+    status: 503,
+    description: 'Datos de pago no disponibles',
+  })
+  async obtenerInstruccionesPago(@Param('id') pedidoId: string): Promise<PedidoInstruccionesPagoDto> {
+    return this.pedidoService.obtenerInstruccionesPago(pedidoId);
   }
 }

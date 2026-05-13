@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '@common/config/database/prisma.service';
 import { CreatePedidoDto } from './dto/create-pedido.dto';
+import { PedidoInstruccionesPagoDto } from './dto/pedido-instrucciones-pago.dto';
 
 export interface StockInsuficienteError {
   productoId: string;
@@ -286,6 +287,65 @@ export class PedidoService {
       confirmadoEn: actualizado.confirmadoEn,
       totalCentavos: Number(actualizado.totalCentavos),
     };
+  }
+
+  async obtenerInstruccionesPago(pedidoId: string): Promise<PedidoInstruccionesPagoDto> {
+    const pedido = await this.prisma.pedido.findUnique({
+      where: { id: pedidoId },
+    });
+
+    if (!pedido) {
+      throw new NotFoundException('Pedido no encontrado');
+    }
+
+    const configuracion = await this.prisma.configuracionTienda.findUnique({
+      where: { id: 'global' },
+    });
+
+    if (!configuracion) {
+      throw new BadRequestException('Datos de pago no disponibles');
+    }
+
+    const camposRequeridos = [
+      { campo: 'banco', valor: configuracion.banco },
+      { campo: 'cbu', valor: configuracion.cbu },
+      { campo: 'alias', valor: configuracion.alias },
+      { campo: 'titular', valor: configuracion.titular },
+      { campo: 'whatsappContacto', valor: configuracion.whatsappContacto },
+    ] as const;
+
+    const camposVacios = camposRequeridos.filter((c) => !c.valor || c.valor.trim() === '');
+
+    if (camposVacios.length > 0) {
+      throw new BadRequestException('Datos de pago no disponibles');
+    }
+
+    const whatsappNumeros = configuracion.whatsappContacto.replace(/[^0-9]/g, '');
+    const mensajeReferencia = encodeURIComponent(
+      `Hola! Quiero enviar el comprobante de transferencia del pedido ${pedido.codigo}.`,
+    );
+    const enlaceWhatsApp = `https://wa.me/${whatsappNumeros}?text=${mensajeReferencia}`;
+
+    const totalFormateado = new Intl.NumberFormat('es-AR', {
+      style: 'currency',
+      currency: 'ARS',
+      minimumFractionDigits: 0,
+    }).format(Number(pedido.totalCentavos) / 100);
+
+    const resultado: PedidoInstruccionesPagoDto = {
+      banco: configuracion.banco,
+      cbu: configuracion.cbu,
+      alias: configuracion.alias,
+      titular: configuracion.titular,
+      mensajeTransferencia: configuracion.mensajeTransferencia,
+      whatsappContacto: configuracion.whatsappContacto,
+      numeroPedido: pedido.codigo,
+      totalFormateado,
+      estadoPedido: pedido.estado,
+      enlaceWhatsApp,
+    };
+
+    return resultado;
   }
 
   private static validarEmail(email: string): boolean {
