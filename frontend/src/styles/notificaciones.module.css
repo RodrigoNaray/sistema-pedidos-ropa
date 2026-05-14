@@ -1,0 +1,212 @@
+.contenedor {
+  max-width: 720px;
+  margin: var(--space-2xl) auto;
+  padding: var(--space-lg);
+  font-family: var(--font-body);
+}
+
+.encabezado {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-lg);
+  padding-bottom: var(--space-md);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.titulo {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: var(--font-size-3xl);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.contador {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: var(--font-size-xs);
+  color: var(--color-bg-primary);
+  background: var(--color-accent-green);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: 4px;
+}
+
+.filtros {
+  display: flex;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
+}
+
+.filtroBoton {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: var(--space-sm) var(--space-md);
+  cursor: pointer;
+  transition: all 150ms ease-out;
+}
+
+.filtroBoton:hover {
+  border-color: var(--color-border-hover);
+  color: var(--color-text-primary);
+}
+
+.filtroBoton.activo {
+  background: var(--color-accent-green);
+  border-color: var(--color-accent-green);
+  color: var(--color-bg-primary);
+}
+
+.lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.notificacionItem {
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  overflow: hidden;
+  transition: all 200ms ease-out;
+}
+
+.notificacionItem:hover {
+  border-color: var(--color-border-hover);
+}
+
+.notificacionItem.leida {
+  opacity: 0.7;
+}
+
+.notificacionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: var(--space-md);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  text-align: left;
+}
+
+.notificacionHeader:hover {
+  background: var(--color-bg-secondary);
+}
+
+.notificacionInfo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex: 1;
+}
+
+.canalBadge {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: var(--font-size-xs);
+  color: var(--color-accent-terracotta);
+  background: var(--color-bg-secondary);
+  padding: 2px var(--space-xs);
+  border-radius: 2px;
+  text-transform: uppercase;
+}
+
+.mensaje {
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  flex: 1;
+}
+
+.notificacionMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.indicadorNoLeida {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-accent-green);
+}
+
+.fecha {
+  font-family: var(--font-body);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.notificacionDetalle {
+  border-top: 1px solid var(--color-border);
+  padding: var(--space-md);
+  background: var(--color-bg-secondary);
+}
+
+.cargando,
+.sinPedido {
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.pedidoInfo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.tituloPedido {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: var(--font-size-lg);
+  color: var(--color-text-primary);
+  margin: 0;
+  padding-bottom: var(--space-xs);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.camposPedido {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.camposPedido p {
+  margin: 0;
+}
+
+.camposPedido strong {
+  color: var(--color-text-primary);
+  margin-right: var(--space-xs);
+}
+
+.vacio {
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  text-align: center;
+  padding: var(--space-2xl) 0;
+}
+
+.error {
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  color: var(--color-error);
+  text-align: center;
+  padding: var(--space-lg);
+  background: var(--color-bg-secondary);
+  border-radius: 4px;
+}
