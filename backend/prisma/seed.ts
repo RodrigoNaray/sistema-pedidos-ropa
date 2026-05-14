@@ -37,6 +37,65 @@ async function main() {
     },
   });
 
+  // Pedido de ejemplo para notificaciones
+  const pedidoCreado = await prisma.pedido.create({
+    data: {
+      emailComprador: 'cliente@ejemplo.com',
+      telefonoComprador: '+598987654321',
+      estado: 'PENDIENTE_PAGO',
+      totalCentavos: 5000,
+      codigo: 'PEDIDO-001',
+      creadoEn: new Date(),
+      confirmadoEn: null,
+      vencidoEn: new Date(Date.now() + 48 * 60 * 60 * 1000),
+      items: {
+        create: [
+          {
+            productoId: (await prisma.producto.findFirst({ select: { id: true } }))!,
+            cantidad: 2,
+            precioUnitarioCentavos: 2500,
+            subtotalCentavos: 5000,
+          },
+        ],
+      },
+    },
+    include: { items: true },
+  });
+
+  // Notificaciones de ejemplo
+  await prisma.notificacion.createMany({
+    data: [
+      {
+        canal: 'PANEL',
+        mensaje: 'Nuevo pedido recibido: PEDIDO-001',
+        leida: false,
+        pedidoId: pedidoCreado.id,
+        creadoEn: new Date(Date.now() - 2 * 60 * 60 * 1000),
+      },
+      {
+        canal: 'PANEL',
+        mensaje: 'Pago confirmado para pedido: PEDIDO-001',
+        leida: false,
+        pedidoId: pedidoCreado.id,
+        creadoEn: new Date(Date.now() - 1.5 * 60 * 60 * 1000),
+      },
+      {
+        canal: 'EMAIL',
+        mensaje: 'Pedido PEDIDO-001 esta por vencer',
+        leida: true,
+        pedidoId: pedidoCreado.id,
+        creadoEn: new Date(Date.now() - 1 * 60 * 60 * 1000),
+      },
+      {
+        canal: 'PANEL',
+        mensaje: 'Stock del producto Camiseta Basica bajo de 20 unidades',
+        leida: true,
+        pedidoId: null,
+        creadoEn: new Date(Date.now() - 24 * 60 * 60 * 1000),
+      },
+    ],
+  });
+
   // Productos de prueba
   const productos = [
     {
