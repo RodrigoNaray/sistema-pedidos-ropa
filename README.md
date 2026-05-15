@@ -51,29 +51,25 @@ El frontend está desarrollado con Next.js utilizando el App Router. Proporciona
    ```bash
    git clone https://github.com/RodrigoNaray/sistema-pedidos-ropa.git
    ```
-2. Instalar dependencias:
+2. Instalar dependencias y configurar archivos .env en `frontend` y `backend`:
    ```bash
    pnpm install
    ```
-3. Configurar las variables de entorno en ambos directorios creando un .env en cada carpta (`backend` y `frontend`).
-    ```bash
-    
-    ```
-4. Crear la base de datos en PostgreSQL y configurar las credenciales en el archivo `.env` del backend.
+3. Crear la base de datos en PostgreSQL y configurar las credenciales en el archivo `.env` del backend.
    ```env
    DATABASE_URL="postgresql://usuario:contraseña@localhost:5432/nombre_base_datos"
    ```
 
-5. Ejecutar las migraciones de la base de datos:
+4. Ejecutar las migraciones de la base de datos:
    ```bash
    pnpm prisma:migrate
    ```
 
-6. Poblar la base de datos con datos iniciales:
+5. Poblar la base de datos con datos iniciales:
    ```bash
    pnpm seed
    ```
-7. Iniciar el proyecto completo (backend y frontend) con un solo comando:
+6. Iniciar el proyecto completo (backend y frontend) con un solo comando:
    ```bash
    pnpm dev
    ```
