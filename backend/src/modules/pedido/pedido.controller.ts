@@ -1,8 +1,9 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, Put, Post } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { PedidoService, CreatePedidoResult } from './pedido.service';
 import { CreatePedidoDto } from './dto/create-pedido.dto';
 import { PedidoInstruccionesPagoDto } from './dto/pedido-instrucciones-pago.dto';
+import { PedidoPendienteDto } from './dto/pedido-pendiente.dto';
 
 @ApiTags('pedidos')
 @Controller('pedidos')
@@ -39,23 +40,39 @@ export class PedidoController {
     return this.pedidoService.obtenerUno(id);
   }
 
-  @Post(':id/confirmar')
+
+@Put(':id/confirmar-pago')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Confirmar pago de un pedido' })
+  @ApiOperation({ summary: 'Confirmar pago manualmente de un pedido' })
   @ApiResponse({
     status: 200,
-    description: 'Pago confirmado',
+    description: 'Pago confirmado exitosamente',
   })
   @ApiResponse({
     status: 400,
-    description: 'Pedido ya confirmado',
+    description: 'Pedido ya confirmado o stock insuficiente',
   })
   @ApiResponse({
     status: 404,
-    description: 'Pedido no encontrado',
+    description: 'Pedido o producto no encontrado',
   })
-  async confirmarPago(id: string) {
+  async confirmarPago(@Param('id') id: string) {
     return this.pedidoService.confirmarPago(id);
+  }
+
+@Get('list-pendientes')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Listar pedidos pendientes de pago' })
+  @ApiResponse({
+    status: 200,
+    description: 'Pedidos pendientes obtenidos',
+    schema: {
+      type: 'array',
+      items: { $ref: '#/components/schemas/PedidoPendienteDto' },
+    },
+  })
+  async listarPendientes(): Promise<PedidoPendienteDto[]> {
+    return this.pedidoService.listarPendientes();
   }
 
   @Get(':id/instrucciones-pago')

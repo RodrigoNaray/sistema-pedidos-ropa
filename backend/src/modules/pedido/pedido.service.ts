@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import {
   BadRequestException,
   Injectable,
@@ -6,6 +7,7 @@ import {
 import { PrismaService } from '@common/config/database/prisma.service';
 import { CreatePedidoDto } from './dto/create-pedido.dto';
 import { PedidoInstruccionesPagoDto } from './dto/pedido-instrucciones-pago.dto';
+import { PedidoPendienteDto } from './dto/pedido-pendiente.dto';
 
 export interface StockInsuficienteError {
   productoId: string;
@@ -187,7 +189,14 @@ export class PedidoService {
       telefonoComprador: pedido.telefonoComprador,
       estado: pedido.estado,
       totalCentavos: Number(pedido.totalCentavos),
-      items: pedido.items.map((i) => ({
+      items: pedido.items.map((i: {
+        id: string;
+        productoId: string;
+        cantidad: number;
+        precioUnitarioCentavos: bigint;
+        subtotalCentavos: bigint;
+        producto: { nombre: string; talle: string };
+      }) => ({
         id: i.id,
         productoId: i.productoId,
         cantidad: i.cantidad,
@@ -228,7 +237,14 @@ export class PedidoService {
       creadoEn: pedido.creadoEn,
       confirmadoEn: pedido.confirmadoEn,
       vencidoEn: pedido.vencidoEn,
-      items: pedido.items.map((i) => ({
+      items: pedido.items.map((i: {
+        id: string;
+        productoId: string;
+        cantidad: number;
+        precioUnitarioCentavos: bigint;
+        subtotalCentavos: bigint;
+        producto: { nombre: string; talle: string };
+      }) => ({
         id: i.id,
         productoId: i.productoId,
         cantidad: i.cantidad,
@@ -242,6 +258,42 @@ export class PedidoService {
     };
   }
 
+  async listarPendientes(): Promise<PedidoPendienteDto[]> {
+    const pedidos = await this.prisma.pedido.findMany({
+      where: {
+        estado: PedidoService.estadoPendientePago,
+      },
+      orderBy: { creadoEn: 'desc' },
+      include: {
+        _count: {
+          select: { items: true },
+        },
+      },
+    });
+
+    return pedidos.map(
+      (p: {
+        id: string;
+        codigo: string;
+        emailComprador: string;
+        telefonoComprador: string;
+        totalCentavos: bigint;
+        creadoEn: Date;
+        vencidoEn: Date;
+        _count: { items: number };
+      }) => ({
+        id: p.id,
+        codigo: p.codigo,
+        emailComprador: p.emailComprador,
+        telefonoComprador: p.telefonoComprador,
+        totalCentavos: Number(p.totalCentavos),
+        creadoEn: p.creadoEn,
+        vencidoEn: p.vencidoEn,
+        itemsCount: p._count.items,
+      }),
+    );
+  }
+
   async confirmarPago(id: string) {
     const pedido = await this.prisma.pedido.findUnique({
       where: { id },
@@ -253,40 +305,95 @@ export class PedidoService {
     }
 
     if (pedido.estado === PedidoService.estadoPagoConfirmado) {
-      throw new BadRequestException('El pedido ya está confirmado');
+      throw new BadRequestException('Este pedido ya fue confirmado');
     }
+
+    const productosInsuficientes: string[] = [];
+    const productosNoEncontrados: string[] = [];
 
     for (const item of pedido.items) {
-      await this.prisma.producto.update({
+      const producto = await this.prisma.producto.findUnique({
         where: { id: item.productoId },
-        data: { stock: { decrement: item.cantidad } },
+        select: { id: true, nombre: true, stock: true },
       });
+
+      if (!producto) {
+        productosNoEncontrados.push(item.productoId);
+        continue;
+      }
+
+      if (producto.stock < item.cantidad) {
+        productosInsuficientes.push(
+          `${producto.nombre} (pedido: ${item.cantidad}, disponible: ${producto.stock})`,
+        );
+      }
     }
 
-    const actualizado = await this.prisma.pedido.update({
-      where: { id },
-      data: {
+    if (productosNoEncontrados.length > 0) {
+      const lista = productosNoEncontrados.join(', ');
+      throw new NotFoundException(`Producto no encontrado: ${lista}`);
+    }
+
+    if (productosInsuficientes.length > 0) {
+      const lista = productosInsuficientes.join(', ');
+      throw new BadRequestException(
+        `Stock insuficiente: ${lista}`,
+      );
+    }
+
+    const resultado = await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      await tx.pedido.update({
+        where: { id },
+        data: {
+          estado: PedidoService.estadoPagoConfirmado,
+          confirmadoEn: new Date(),
+        },
+      });
+
+      const productosActualizados: string[] = [];
+
+      for (const item of pedido.items) {
+        const productoActualizado = await tx.producto.update({
+          where: { id: item.productoId },
+          data: { stock: { decrement: item.cantidad } },
+          select: { nombre: true, stock: true },
+        });
+
+        if (productoActualizado.stock <= 0) {
+          await tx.producto.update({
+            where: { id: item.productoId },
+            data: { activo: false },
+          });
+          productosActualizados.push(productoActualizado.nombre);
+        }
+      }
+
+      await tx.notificacion.create({
+        data: {
+          canal: PedidoService.canalEmail,
+          mensaje: `Tu pedido ${pedido.codigo} fue confirmado. Pago recibido exitosamente.`,
+          pedidoId: pedido.id,
+        },
+      });
+
+      await tx.notificacion.create({
+        data: {
+          canal: PedidoService.canalPanel,
+          mensaje: `Pago del pedido ${pedido.codigo} confirmado por el administrador`,
+          pedidoId: pedido.id,
+        },
+      });
+
+      return {
+        id: pedido.id,
+        codigo: pedido.codigo,
         estado: PedidoService.estadoPagoConfirmado,
         confirmadoEn: new Date(),
-      },
-      include: { items: { include: { producto: true } } },
+        totalCentavos: Number(pedido.totalCentavos),
+      };
     });
 
-    await this.prisma.notificacion.create({
-      data: {
-        canal: PedidoService.canalPanel,
-        mensaje: `Pedido ${pedido.codigo} confirmado`,
-        pedidoId: pedido.id,
-      },
-    });
-
-    return {
-      id: actualizado.id,
-      codigo: actualizado.codigo,
-      estado: actualizado.estado,
-      confirmadoEn: actualizado.confirmadoEn,
-      totalCentavos: Number(actualizado.totalCentavos),
-    };
+    return resultado;
   }
 
   async obtenerInstruccionesPago(pedidoId: string): Promise<PedidoInstruccionesPagoDto> {
@@ -314,13 +421,18 @@ export class PedidoService {
       { campo: 'whatsappContacto', valor: configuracion.whatsappContacto },
     ] as const;
 
-    const camposVacios = camposRequeridos.filter((c) => !c.valor || c.valor.trim() === '');
+    const camposVacios = camposRequeridos.filter(
+      (c) => !c.valor || c.valor.trim() === '',
+    );
 
     if (camposVacios.length > 0) {
       throw new BadRequestException('Datos de pago no disponibles');
     }
 
-    const whatsappNumeros = configuracion.whatsappContacto.replace(/[^0-9]/g, '');
+    const whatsappNumeros = configuracion.whatsappContacto.replace(
+      /[^0-9]/g,
+      '',
+    );
     const mensajeReferencia = encodeURIComponent(
       `Hola! Quiero enviar el comprobante de transferencia del pedido ${pedido.codigo}.`,
     );
